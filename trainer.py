@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from transformers import AdamW, get_linear_schedule_with_warmup
 
-from utils import compute_metrics, get_label, MODEL_CLASSES, recall, precision, f1_score
+from utils import compute_metrics, get_label, MODEL_CLASSES, recall, precision, f1_score, EarlyStopping
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +19,7 @@ class Trainer(object):
         self.train_dataset = train_dataset
         self.dev_dataset = dev_dataset
         self.test_dataset = test_dataset
+        self.early_stopping = EarlyStopping(patience=10, verbose=True)
 
         self.label_lst = get_label(args)
         self.num_labels = len(self.label_lst)
@@ -85,9 +86,6 @@ class Trainer(object):
                 outputs = self.model(**inputs)
                 loss = outputs[0]
 
-                if self.args.logger:
-                    neptune.log_metric('Loss', loss.item())
-
                 if self.args.gradient_accumulation_steps > 1:
                     loss = loss / self.args.gradient_accumulation_steps
 
@@ -103,8 +101,9 @@ class Trainer(object):
                     global_step += 1
 
                     if self.args.logging_steps > 0 and global_step % self.args.logging_steps == 0 and self.dev_dataset is not None:
+                        if self.args.logger:  # Plot training loss every 100 step
+                            neptune.log_metric('Loss', tr_loss / step)
                         self.evaluate("dev")
-                        # TODO: Implement the test part
 
                     if self.args.save_steps > 0 and global_step % self.args.save_steps == 0:
                         self.save_model()
@@ -176,12 +175,16 @@ class Trainer(object):
         rec = recall(preds, out_label_ids)
         f1 = f1_score(preds, out_label_ids)
 
+        if self.early_stopping.validate((results['loss'])):
+            print("Early stopping... Terminating Process.")
+            exit(0)
+
         if self.args.logger:
-            neptune.log_metric('Val. Loss', results['loss'])
-            neptune.log_metric('Accuracy', results['acc'])
-            neptune.log_metric('F1 Score', f1)
-            neptune.log_metric('Precision', prec)
-            neptune.log_metric('Recall', rec)
+            neptune.log_metric('(Val.) Loss', results['loss'])
+            neptune.log_metric('(Val.) Accuracy', results['acc'])
+            neptune.log_metric('(Val.) F1 Score', f1)
+            neptune.log_metric('(Val.) Precision', prec)
+            neptune.log_metric('(Val.) Recall', rec)
 
         logger.info("***** Eval results *****")
         for key in sorted(results.keys()):

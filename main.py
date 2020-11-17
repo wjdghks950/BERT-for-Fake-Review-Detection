@@ -18,8 +18,6 @@ def main(args):
     tokenizer = load_tokenizer(args)
     train_dataset = load_and_cache_examples(args, tokenizer, mode="train")
     dev_dataset = load_and_cache_examples(args, tokenizer, mode="dev")
-    # test_dataset = load_and_cache_examples(args, tokenizer, mode="test")
-    # trainer = Trainer(args, train_dataset, dev_dataset, test_dataset)
     trainer = Trainer(args, train_dataset, dev_dataset)
 
     if args.do_train:
@@ -59,8 +57,8 @@ if __name__ == '__main__':
     parser.add_argument("--max_steps", default=-1, type=int, help="If > 0: set total number of training steps to perform. Override num_train_epochs.")
     parser.add_argument("--warmup_steps", default=0, type=int, help="Linear warmup over warmup_steps.")
 
-    parser.add_argument('--logging_steps', type=int, default=100, help="Log every X updates steps.")
-    parser.add_argument('--save_steps', type=int, default=2000, help="Save checkpoint every X updates steps.")
+    parser.add_argument('--logging_steps', type=int, default=200, help="Log every X updates steps.")
+    parser.add_argument('--save_steps', type=int, default=100, help="Save checkpoint every X updates steps.")
 
     parser.add_argument("--do_train", action="store_true", help="Whether to run training.")
     parser.add_argument("--do_eval", action="store_true", help="Whether to run eval on the test set.")
