@@ -91,12 +91,12 @@ class OpSpamProcessor(object):
             polarity = row["polarity"]
             source = row["source"]
             text = row["text"]
-            print("Text >> {}".format(text))
-            print("Label >> {} ".format(deceptive))
+            # print("Text >> {}".format(text))
+            # print("Label >> {} ".format(deceptive))
             if i % 500 == 0:
                 logger.info(row)
             examples.append(OpSpamExample(deceptive=deceptive, hotel=hotel, polarity=polarity, source=source, text=text))
-        exit()
+
         return examples
 
     def get_examples(self, mode):
@@ -216,6 +216,8 @@ class AmazonProcessor(object):
         examples = []
         for i, row in df.iterrows():
             # print(row)
+            print("Label >> ", row["LABEL"])
+            print("Text >> ", row["REVIEW_TEXT"])
             doc_id = row["DOC_ID"]
             label = row["LABEL"]
             rating = row["RATING"]
@@ -231,6 +233,7 @@ class AmazonProcessor(object):
                                           verified=verified, prod_category=prod_category,
                                           prod_id=prod_id, prod_title=prod_title,
                                           rev_title=rev_title, rev_text=rev_text))
+        exit()
         return examples
 
     def get_examples(self, mode):
