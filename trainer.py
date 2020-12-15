@@ -100,13 +100,16 @@ class Trainer(object):
                     self.model.zero_grad()
                     global_step += 1
 
-                    if self.args.logging_steps > 0 and global_step % self.args.logging_steps == 0 and self.dev_dataset is not None:
-                        if self.args.logger:  # Plot training loss every 100 step
-                            neptune.log_metric('Loss', tr_loss / step)
-                        self.evaluate("dev")
+                    # if self.args.logging_steps > 0 and global_step % self.args.logging_steps == 0 and self.dev_dataset is not None:
+                    #     if self.args.logger:  # Plot training loss every 100 step
+                    #         neptune.log_metric('Loss', tr_loss / step)
+                    #     self.evaluate("dev")
 
-                    if self.args.save_steps > 0 and global_step % self.args.save_steps == 0:
-                        self.save_model()
+                    # if self.args.save_steps > 0 and global_step % self.args.save_steps == 0:
+                    #     self.save_model()
+
+                    logger.info('Loss: %f', tr_loss / global_step)
+
 
                 if 0 < self.args.max_steps < global_step:
                     epoch_iterator.close()
@@ -186,9 +189,9 @@ class Trainer(object):
         rec = recall(preds, out_label_ids)
         f1 = f1_score(preds, out_label_ids)
 
-        if self.early_stopping.validate((results['loss'])):
-            print("Early stopping... Terminating Process.")
-            exit(0)
+        # if self.early_stopping.validate((results['loss'])):
+        #     print("Early stopping... Terminating Process.")
+        #     exit(0)
 
         if self.args.logger:
             neptune.log_metric('(Val.) Loss', results['loss'])
@@ -201,13 +204,17 @@ class Trainer(object):
         for key in sorted(results.keys()):
             logger.info("  %s = %s", key, str(results[key]))
 
-        if self.hidden_states_list is not None:
-            torch.save(self.hidden_states_list, os.path.join(self.args.model_dir, "last_layer.pt"))
-            torch.save(self.labels_list, os.path.join(self.args.model_dir, "last_layer_label.pt"))
-            self.hidden_states_list = None
-            self.labels_list = None
-        else:
-            raise Exception("Error: self.hidden_states_list should NOT be None")
+#         if self.hidden_states_list is not None:
+#             torch.save(self.hidden_states_list, os.path.join(self.args.model_dir, "last_layer.pt"))
+#             torch.save(self.labels_list, os.path.join(self.args.model_dir, "last_layer_label.pt"))
+#             self.hidden_states_list = None
+#             self.labels_list = None
+#         else:
+#             raise Exception("Error: self.hidden_states_list should NOT be None")
+
+        logger.info("  prec = %s", str(prec))
+        logger.info("  rec = %s", str(rec))
+        logger.info("  f1 = %s", str(f1))
 
         return results
 

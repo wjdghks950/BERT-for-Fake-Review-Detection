@@ -383,3 +383,63 @@ def load_and_cache_examples(args, tokenizer, mode):
     dataset = TensorDataset(all_input_ids, all_attention_mask,
                             all_token_type_ids, all_label_ids)
     return dataset
+
+
+def convert_review_to_features(review, max_seq_len, tokenizer,
+                                 cls_token_segment_id=0,
+                                 pad_token_segment_id=0,
+                                 sequence_a_segment_id=0,
+                                 mask_padding_with_zero=True):
+    # Setting based on the current model type
+    cls_token = tokenizer.cls_token
+    sep_token = tokenizer.sep_token
+    pad_token_id = tokenizer.pad_token_id
+
+    tokens = tokenizer.tokenize(review)
+
+    # Account for [CLS] and [SEP]
+    special_tokens_count = 2
+    if len(tokens) > max_seq_len - special_tokens_count:
+        tokens = tokens[:(max_seq_len - special_tokens_count)]
+
+    # Add [SEP] token
+    tokens += [sep_token]
+    token_type_ids = [sequence_a_segment_id] * len(tokens)
+
+    # Add [CLS] token
+    tokens = [cls_token] + tokens
+    token_type_ids = [cls_token_segment_id] + token_type_ids
+
+    input_ids = tokenizer.convert_tokens_to_ids(tokens)
+
+    # The mask has 1 for real tokens and 0 for padding tokens. Only real
+    # tokens are attended to.
+    attention_mask = [1 if mask_padding_with_zero else 0] * len(input_ids)
+
+    # Zero-pad up to the sequence length.
+    padding_length = max_seq_len - len(input_ids)
+    input_ids = input_ids + ([pad_token_id] * padding_length)
+    attention_mask = attention_mask + ([0 if mask_padding_with_zero else 1] * padding_length)
+    token_type_ids = token_type_ids + ([pad_token_segment_id] * padding_length)
+
+    assert len(input_ids) == max_seq_len, "Error with input length {} vs {}".format(len(input_ids), max_seq_len)
+    assert len(attention_mask) == max_seq_len, "Error with attention mask length {} vs {}".format(len(attention_mask), max_seq_len)
+    assert len(token_type_ids) == max_seq_len, "Error with token type length {} vs {}".format(len(token_type_ids), max_seq_len)
+
+    return [OpSpamFeatures(
+                    input_ids=input_ids,
+                    attention_mask=attention_mask,
+                    token_type_ids=token_type_ids,
+                    label_id=None
+                    )]
+
+def tokenize_review(max_seq_len, tokenizer, device, review):
+    features = convert_review_to_features(review, max_seq_len, tokenizer)
+    
+    # Convert to Tensors and build dataset
+    all_input_ids = torch.tensor([f.input_ids for f in features], dtype=torch.long).to(device)
+    all_attention_mask = torch.tensor([f.attention_mask for f in features], dtype=torch.long).to(device)
+    all_token_type_ids = torch.tensor([f.token_type_ids for f in features], dtype=torch.long).to(device)
+
+    return all_input_ids, all_attention_mask, all_token_type_ids
+

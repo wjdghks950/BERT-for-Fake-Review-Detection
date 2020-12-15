@@ -16,12 +16,16 @@ def main(args):
         neptune.append_tag("BertForSequenceClassification", "finetuning", "fake detection")
 
     tokenizer = load_tokenizer(args)
-    train_dataset = load_and_cache_examples(args, tokenizer, mode="train")
-    dev_dataset = load_and_cache_examples(args, tokenizer, mode="dev")
-    trainer = Trainer(args, train_dataset, dev_dataset)
+    train_dataset = dev_dataset = test_dataset = None
+    if args.do_train:
+        train_dataset = load_and_cache_examples(args, tokenizer, mode="train")
+    # dev_dataset = load_and_cache_examples(args, tokenizer, mode="dev")
+    test_dataset = load_and_cache_examples(args, tokenizer, mode="test")
+    trainer = Trainer(args, None, None, test_dataset)
 
     if args.do_train:
         trainer.train()
+        trainer.save_model()
 
     if args.do_eval:
         trainer.load_model()
@@ -46,7 +50,7 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=42, help="random seed for initialization")
     parser.add_argument("--train_batch_size", default=32, type=int, help="Batch size for training.")
     parser.add_argument("--eval_batch_size", default=64, type=int, help="Batch size for evaluation.")
-    parser.add_argument("--max_seq_len", default=50, type=int, help="The maximum total input sequence length after tokenization.")
+    parser.add_argument("--max_seq_len", default=512, type=int, help="The maximum total input sequence length after tokenization.")
     parser.add_argument("--learning_rate", default=5e-5, type=float, help="The initial learning rate for Adam.")
     parser.add_argument("--num_train_epochs", default=5.0, type=float, help="Total number of training epochs to perform.")
     parser.add_argument("--weight_decay", default=0.0, type=float, help="Weight decay if we apply some.")
