@@ -215,9 +215,7 @@ class AmazonProcessor(object):
         """Creates examples for the Amazon training and dev sets."""
         examples = []
         for i, row in df.iterrows():
-            # print(row)
-            print("Label >> ", row["LABEL"])
-            print("Text >> ", row["REVIEW_TEXT"])
+            
             doc_id = row["DOC_ID"]
             label = row["LABEL"]
             rating = row["RATING"]
@@ -233,7 +231,7 @@ class AmazonProcessor(object):
                                           verified=verified, prod_category=prod_category,
                                           prod_id=prod_id, prod_title=prod_title,
                                           rev_title=rev_title, rev_text=rev_text))
-        exit()
+
         return examples
 
     def get_examples(self, mode):

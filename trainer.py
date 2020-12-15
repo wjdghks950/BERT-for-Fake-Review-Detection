@@ -23,12 +23,12 @@ class Trainer(object):
 
         self.label_lst = get_label(args)
         self.num_labels = len(self.label_lst)
-
+        self.hidden_states_list = None
         self.config_class, self.model_class, _ = MODEL_CLASSES[args.model_type]
 
         self.config = self.config_class.from_pretrained(args.model_name_or_path,
                                                         num_labels=self.num_labels, 
-                                                        finetuning_task=args.task)
+                                                        finetuning_task=args.task, output_hidden_states=True, output_attentions=True)
         self.model = self.model_class.from_pretrained(args.model_name_or_path, config=self.config)
 
         # GPU or CPU
@@ -148,8 +148,10 @@ class Trainer(object):
                           'labels': batch[3]}
                 if self.args.model_type != 'distilkobert':
                     inputs['token_type_ids'] = batch[2]
-                outputs = self.model(**inputs)
+                outputs = self.model(**inputs)  # (loss), logits, (hidden_states), (attentions)
                 tmp_eval_loss, logits = outputs[:2]
+                bert_hidden_states = outputs[2][0]
+                bert_cls_rep = bert_hidden_states[:, :1, :].squeeze(-2).clone()
 
                 eval_loss += tmp_eval_loss.mean().item()
             nb_eval_steps += 1
@@ -161,6 +163,15 @@ class Trainer(object):
                 preds = np.append(preds, logits.detach().cpu().numpy(), axis=0)
                 out_label_ids = np.append(
                     out_label_ids, inputs['labels'].detach().cpu().numpy(), axis=0)
+
+            if self.hidden_states_list is None:
+                self.hidden_states_list = bert_cls_rep
+                self.labels_list = inputs['labels']
+            else:
+                self.hidden_states_list = torch.cat((self.hidden_states_list, bert_cls_rep), 0)
+                self.labels_list = torch.cat((self.labels_list, inputs['labels']), 0)
+                # print("self.hidden_states_list (shape) >> ", self.hidden_states_list.shape)
+                # print("self.labels_list (shape) >> ", self.labels_list.shape)
 
         eval_loss = eval_loss / nb_eval_steps
         results = {
@@ -189,6 +200,14 @@ class Trainer(object):
         logger.info("***** Eval results *****")
         for key in sorted(results.keys()):
             logger.info("  %s = %s", key, str(results[key]))
+
+        if self.hidden_states_list is not None:
+            torch.save(self.hidden_states_list, os.path.join(self.args.model_dir, "last_layer.pt"))
+            torch.save(self.labels_list, os.path.join(self.args.model_dir, "last_layer_label.pt"))
+            self.hidden_states_list = None
+            self.labels_list = None
+        else:
+            raise Exception("Error: self.hidden_states_list should NOT be None")
 
         return results
 
