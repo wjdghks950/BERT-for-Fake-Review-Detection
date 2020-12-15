@@ -1,5 +1,9 @@
 # Fake Review Detection for restaurants, products and hotels
 
+With a growing interest in the field of anomaly detection came along the tasks for ``Fake Review Detection``.
+Fake Review Detection is a task for detecting fake, anomalous reviews among a given text corpus of reviews.
+In this work, with the ``Opspam dataset`` (and ``Amazon dataset``), we provide a BERT-based fake review detection model that achieves an accuracy of 0.8991 (``Acc = 0.8991``).
+
 - Fake review detection using BERT (`bert-base-uncased`)
 - Using `Huggingface Tranformers` library to implement the fake review detection model
 - Dataset: Opspam dataset, Amazon fake review dataset, Yelp dataset
@@ -11,8 +15,14 @@
 
 ## Usage
 
+Training with Opspam dataset:
 ```bash
-$ python main.py --task opspam --do_train
+$ ./train_opspam.sh
+```
+
+Training with Amazon dataset:
+```bash
+$ ./train_amazon.sh
 ```
 
 ## References
