@@ -13,6 +13,10 @@ In this work, with the ``Opspam dataset`` (and ``Amazon dataset``), we provide a
 - torch==1.4.0
 - transformers==2.10.0
 
+Install them with the following command:
+
+$ pip install -r requirements.txt
+
 ## Usage
 
 Training with Opspam dataset:
@@ -24,6 +28,10 @@ Training with Amazon dataset:
 ```bash
 $ ./train_amazon.sh
 ```
+
+Or, you can simply unzip the `data.zip` to train and get going with model evaluation!
+
+$ unzip data.zip -d ./data
 
 ## References
 References for dataset and the Huggingface Transformers library
